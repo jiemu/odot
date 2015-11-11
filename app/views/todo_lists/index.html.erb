@@ -4,7 +4,9 @@
 	var TodoListItem = React.createClass({ 
 		getInitialState: function(){
 	      return {
-	        listid: this.props.listid, //need for edit/del/list items
+	      	title: this.props.data.title,
+        	description: this.props.data.description,
+	        listid: this.props.data.listid, //need for edit/del/show
 	      }
 	    },
 		// deleteTodoList: function(e){
@@ -26,31 +28,44 @@
 	 //    },
 
 		render: function(){ 
-			return (<li>
-						<h2>{this.props.title}</h2>
-						<p>{this.props.description}</p>
+			return (
+					<li>
+						<h2>{this.state.title}</h2>
+						<p>{this.state.description}</p>
 						<ul class="functions">
-					      <li>List Items</li> //update
-					      <li>Edit</li>		//upadte
-					      <li>Delete</li>	//udpate
+					      <li>List Items</li>
+					      <li>Edit</li>
+					      <li>Delete</li>
 						</ul>
-					</li> ); 
+					</li> 
+			); 
 		} 
 	});
 
 	var TodoListItems = React.createClass({
 
 	    render: function() {
-	    	var createList = function(list_item) { 
-	    		return ( 
-	    			<TodoListItem>{list_item}</TodoListItem> 
-	    		); 
-	    	};
+	    	// var createList = function(list_item) { 
+	    	// 	return ( 
+	    	// 		//<TodoListItem>{list_item}</TodoListItem> 
+	    	// 		<TodoListItem data={list_item} />
+	    	// 	); 
+	    	// };
 
-	        return (
-	        	//<ul>{this.props.data.map(createList)}</ul>
-	        	<ul>{this.props.data.map(createList)}</ul>
-	        );
+	     //    return (
+	     //    	//<ul>{this.props.data.map(createList)}</ul>
+	     //    	<ul>{this.props.data.map(createList)}</ul>
+	     //    );
+	        var createList = this.props.data.map(function (list_item) {
+		        return (
+		          <TodoListItem data={list_item} />
+		        );
+		      });
+		      return (
+		        <div className="TodoLists">
+		          {createList}
+		        </div>
+		      );
 	    }
 	});
 
@@ -59,6 +74,7 @@
 		getInitialState: function(){
 	      return {
 	          data: [],
+	          //data: [{title: "Title",  description: "Desc 1"},{title: "Title",  description: "Desc 1"}],
 	          // {data: [
 	          //   {title: '',  description: ''},
 	          //   {title: '',  description: ''}
@@ -72,10 +88,11 @@
 	        dataType: 'json',
 	        cache: false,
 	        type: 'GET',
-	        data: {title: this.state.title, description: this.state.description},
+	        //data: {title: this.state.title, description: this.state.description},
 	        success: function(data) {
 	          //var temp = data[1];
-	          this.setState({title: data['title'], description: data['description']});
+	          //this.setState({title: data['title'], description: data['description']});
+	          this.setState({data: data});
 	        }.bind(this),
 	        error: function(xhr, status, err) {
 	          console.error(this.props.url, status, err.toString());
@@ -91,16 +108,14 @@
 
 	        return (
 	        	<div className="TodoListBox">
+	        		<p id="notice"><%= notice %></p>
 	        		<h1>Todo Lists</h1>	
-	        		<div className="TodoListItems">
-	        			<TodoListItems data={this.state.data}/>
-	        		</div>
+	        		<TodoListItems data={this.state.data} />
 	        	</div>
 	        );
 	    }
 	});
 
-	
 
 	React.render(<TodoList url="/todo_lists" />, document.getElementById('todolist-index'));
 </script>
