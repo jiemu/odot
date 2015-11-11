@@ -1,33 +1,201 @@
-<h1><%= @todo_list.title %></h1>
+<div id="todolist-index" data-react-class="TodoItems" data-react-props="{...}"></div>
+<script type="text/babel" >
+  var TodoList = React.createClass({
+    loadFromServer: function() {
+      $.ajax({
+        url: this.props.url,
+        dataType: 'json',
+        cache: false,
+        success: function(data) {
+          var temp = data[1]; //setting data
+          this.setState({data: data[0], todo_list_id: temp['todo_list_id']});
+        }.bind(this),
+        error: function(xhr, status, err) {
+          console.error(this.props.url, status, err.toString());
+        }.bind(this)
+      });
+    },
+    getInitialState: function(){
+      return {
+          data: [],
+          todo_list_id: 0
+      }
+    },
+    componentDidMount: function() {
+      this.loadFromServer();
+    },
+    handleTodoItemSubmit: function(todoitem) {
+      $.ajax({
+        url: '/todo_lists/' + todoitem['listid'] + '/todo_items/',
+        dataType: 'json',
+        type: 'POST',
+        data: {content: todoitem['content'], todo_list_id: todoitem['listid']},
+        success: function(data) {
+          var temp = data[1];
+          this.setState({data: data[0], todo_list_id: temp['todo_list_id']});
+        }.bind(this),
+        error: function(xhr, status, err) {
+          console.error(this.props.url, status, err.toString());
+        }.bind(this)
+      });
+    },
+    render: function(){
+      return (
+          <div className="TodoItemBox">
+            <h1><%= @todo_list.title%></h1>
+            <table className="todo_items">
+              <thead>
+                <tr>
+                  <th width="25%">Completed</th>
+                  <th width="60%">Content</th>
+                  <th width="15%">Functions</th>
+                </tr>
+              </thead>
+              <tbody id="todolist-trbody">
+                <TodoItemBox data={this.state.data} listid={this.state.todo_list_id}/>
+              </tbody >
+            </table>
+            <TodoForm listid={this.state.todo_list_id} onTodoItemSubmit={this.handleTodoItemSubmit}/>
+          </div>
+      )
+    }
+  });
 
-<table class="todo_items">
-  <thead>
-    <tr>
-      <th width="25%">Completed?</th>
-      <th width="65%">Content</th>
-      <th width="10%">Functions</th>
-    </tr>
-  </thead>
-  <tbody>
-  <% @todo_list.todo_items.each do |todo_item| %>
-  <tr id="<%= dom_id(todo_item) %>">
-  	<td>
-      <% if todo_item.completed? %>
-        <%= todo_item.completed_at%>
-      <% else %>
-        <%= link_to "Mark Complete", complete_todo_list_todo_item_path(todo_item), method: :patch %>
-      <% end %>
-    </td>
-  	<td><%= todo_item.content %></td>
-  	<td>
-  		<%= link_to "Edit", edit_todo_list_todo_item_path(todo_item) %>
-  		<%= link_to "Delete", todo_list_todo_item_path(todo_item), method: :delete, data: { confirm: "Are you sure?" } %>
-  	</td>
-  </tr>
-  <% end %>
-</tbody>
-</table>
 
-<p>
-  <%= link_to "New Todo Item", new_todo_list_todo_item_path %>
-</p>
+  var TodoItemBox = React.createClass({
+    render: function() {
+      var url = '/todo_lists/' + this.props.listid + '/todo_items/'
+      var templistid = this.props.listid
+      var allitems = this.props.data
+      var TodoItemListNodes = this.props.data.map(function (item) {
+        return (
+          <tr className="TodoItem" data={allitems} listid={templistid}> 
+            <TodoItem data={item} listid={templistid} />
+          </tr>
+        );
+      });
+      return (
+        <tbody className="ItemList">
+          {TodoItemListNodes}
+        </tbody>
+      );
+    }
+  });
+
+  var TodoItem = React.createClass({
+    getInitialState: function(){
+      return {
+        complete: '',
+        itemid: this.props.data.id,
+        listid: this.props.listid,
+        content: this.props.data.content
+      }
+    },
+    editingItem: function(e){
+      this.setState(e.target.value);
+    },
+    editItem: function(e){
+      //console.log(e.target.previousSibling.value);
+      var update_url = '/todo_lists/' + this.props.listid + '/todo_items/' + this.state.itemid 
+      $.ajax({
+        url: update_url,
+        dataType: 'json',
+        type: 'PUT',
+        data: {id: this.state.itemid, todo_list_id: this.state.listid, content: e.target.previousSibling.value},
+        success: function(data) {
+          this.setState({content: data['content']});
+        }.bind(this),
+        error: function(xhr, status, err) {
+          console.error(update_url, status, err.toString());
+        }.bind(this)
+      });
+    },
+    markComplete: function(e){
+      var complete_url = '/todo_lists/' + this.props.listid + '/todo_items/' + this.state.itemid + '/complete'
+      $.ajax({
+        url: complete_url,
+        dataType: 'json',
+        type: 'PATCH',
+        data: {id: this.state.itemid},
+        success: function(data) {
+          this.setState({complete: data['completed_at']});
+          var comp = data['completed_at']
+          e.target.innerHTML = data['completed_at']
+        }.bind(this),
+        error: function(xhr, status, err) {
+          console.error(complete_url, status, err.toString());
+        }.bind(this)
+      });
+    },
+    deleteItem: function(e){
+      var delete_url = '/todo_lists/' + this.props.listid + '/todo_items/' + this.state.itemid 
+      $.ajax({
+        url: delete_url,
+        dataType: 'json',
+        type: 'DELETE',
+        data: {id: this.state.itemid},
+        success: function(data) {
+          var td = e.target.parentElement
+          var tr = td.parentElement
+          tr.remove();
+        }.bind(this),
+        error: function(xhr, status, err) {
+          console.error(delete_url, status, err.toString());
+        }.bind(this)
+      });
+    },
+    render: function() {
+      var url = '/todo_lists/' + this.props.listid + '/todo_items/'
+      var templistid = this.props.listid
+      var item = this.props.data
+      var complete = (item.completed_at != null)? item.completed_at : <span className="sbtn" onClick={this.markComplete}>Mark Complete</span>
+      return (
+        <div className="TodoItem" id="{itemlist.id}"> 
+          <td>{complete}
+          </td>
+          <td>
+            <input type='text' value={this.state.content} onChange={this.editingItem} />
+            <span className="sbtn" onClick={this.editItem} divid="{itemlist.id}">Edit</span>
+          </td>
+          <td>
+            <span className="sbtn" onClick={this.deleteItem} divid="{itemlist.id}">Delete</span>
+          </td>
+        </div>
+      );
+    }
+  });
+
+  var TodoForm = React.createClass({
+    handleSubmit: function(e) {
+      e.preventDefault();
+      var content = this.refs.content.value.trim();
+      var listid = this.refs.listid.value.trim();
+      if (!content) {
+        return;
+      }
+      this.props.onTodoItemSubmit({content: content, listid: listid});
+      this.refs.content.value = '';
+      return;
+    },
+
+    render: function() {
+      var url = '/todo_lists/' + this.props.listid + '/todo_items'
+      
+      return (
+        <div className="todoForm">
+          <br />
+          <h3>New Todo Item</h3>
+          <form id="new_todo_item" onSubmit={this.handleSubmit}>
+            <%= tag(:input, :type => "hidden", :name => request_forgery_protection_token.to_s, :value => form_authenticity_token) %>
+            <label>Content</label>
+            <input type="text" name="todo_item[content]" id="todo_item_content" ref="content" />
+            <input type="hidden" name="todo_item[listid]" id="todo_item_listid" ref="listid" value={this.props.listid} />
+            <input type="submit" name="commit" value="Save" />
+          </form>
+        </div>
+      );
+    }
+  });
+
+  React.render(<TodoList url="/todo_lists/4/todo_items" />, document.getElementById('todolist-index'));
+</script>

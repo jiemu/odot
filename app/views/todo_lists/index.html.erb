@@ -1,19 +1,107 @@
-<p id="notice"><%= notice %></p>
+<div id="todolist-index" data-react-class="TodoLists" data-react-props="{...}"></div>
+<script type="text/babel" >
 
-<h1>Todo Lists</h1>
+	var TodoListItem = React.createClass({ 
+		getInitialState: function(){
+	      return {
+	        listid: this.props.listid, //need for edit/del/list items
+	      }
+	    },
+		// deleteTodoList: function(e){
+		// 	var delete_url = '/todo_lists/' + this.props.listid + 'edit'
+	 //      	$.ajax({
+	 //        url: delete_url,
+	 //        dataType: 'json',
+	 //        type: 'DELETE',
+	 //        data: {id: this.state.itemid},
+	 //        success: function(data) {
+	 //          var td = e.target.parentElement
+	 //          var tr = td.parentElement
+	 //          tr.remove();
+	 //        }.bind(this),
+	 //        error: function(xhr, status, err) {
+	 //          console.error(delete_url, status, err.toString());
+	 //        }.bind(this)
+	 //      });
+	 //    },
 
-<% @todo_lists.each do |todo_list| %>
-<div class="todo_list" id="<%= dom_id(todo_list)%>">
-  <h2><%= todo_list.title %></h2>
-  <p><%= todo_list.description %></p>
-  <ul class="functions">
-    <li><%= link_to "List Items", todo_list_todo_items_path(todo_list) %></li>
-    <li><%= link_to 'Show', todo_list %></li>
-    <li><%= link_to 'Edit', edit_todo_list_path(todo_list) %></li>
-    <li><%= link_to 'Destroy', todo_list, method: :delete, data: { confirm: 'Are you sure?' } %></li>
-  </ul>
-  <br class="clear" />
-</div>
-<% end %>
+		render: function(){ 
+			return (<li>
+						<h2>{this.props.title}</h2>
+						<p>{this.props.description}</p>
+						<ul class="functions">
+					      <li>List Items</li> //update
+					      <li>Edit</li>		//upadte
+					      <li>Delete</li>	//udpate
+						</ul>
+					</li> ); 
+		} 
+	});
 
-<%= link_to 'New Todo list', new_todo_list_path %>
+	var TodoListItems = React.createClass({
+
+	    render: function() {
+	    	var createList = function(list_item) { 
+	    		return ( 
+	    			<TodoListItem>{list_item}</TodoListItem> 
+	    		); 
+	    	};
+
+	        return (
+	        	//<ul>{this.props.data.map(createList)}</ul>
+	        	<ul>{this.props.data.map(createList)}</ul>
+	        );
+	    }
+	});
+
+
+	var TodoList = React.createClass({
+		getInitialState: function(){
+	      return {
+	          data: [],
+	          // {data: [
+	          //   {title: '',  description: ''},
+	          //   {title: '',  description: ''}
+	          // ]}
+	      }
+	    },
+
+		loadFromServer: function() {
+	      $.ajax({
+	        url: this.props.url,
+	        dataType: 'json',
+	        cache: false,
+	        type: 'GET',
+	        data: {title: this.state.title, description: this.state.description},
+	        success: function(data) {
+	          //var temp = data[1];
+	          this.setState({title: data['title'], description: data['description']});
+	        }.bind(this),
+	        error: function(xhr, status, err) {
+	          console.error(this.props.url, status, err.toString());
+	        }.bind(this)
+	      });
+	    },
+
+	    componentDidMount: function() {
+	      this.loadFromServer();
+	    },
+
+	    render: function() {
+
+	        return (
+	        	<div className="TodoListBox">
+	        		<h1>Todo Lists</h1>	
+	        		<div className="TodoListItems">
+	        			<TodoListItems data={this.state.data}/>
+	        		</div>
+	        	</div>
+	        );
+	    }
+	});
+
+	
+
+	React.render(<TodoList url="/todo_lists" />, document.getElementById('todolist-index'));
+</script>
+

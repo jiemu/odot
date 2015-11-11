@@ -1,6 +1,11 @@
 class TodoItemsController < ApplicationController
+
   before_action :find_todo_list
+
   def index
+    if request.xhr?
+      render :json => [TodoItem.all, todo_list_id: params[:todo_list_id]]
+    end 
   end
 
   def new
@@ -10,8 +15,12 @@ class TodoItemsController < ApplicationController
   def create
     @todo_item = @todo_list.todo_items.new(todo_item_params)
     if @todo_item.save
-      flash[:success] = "Added todo list item."
-      redirect_to todo_list_todo_items_path
+      if request.xhr?
+        render json: @todo_item
+      else
+        flash[:success] = "Added todo list item."
+        redirect_to todo_list_todo_items_path
+      end
     else
       flash[:error] = "There was a problem adding that todo list item."
       render action: :new
@@ -46,6 +55,7 @@ class TodoItemsController < ApplicationController
   def complete
     @todo_item = @todo_list.todo_items.find(params[:id])
     @todo_item.update_attribute(:completed_at, Time.now)
+
     redirect_to todo_list_todo_items_path, notice: "Todo item marked as complete."
   end
 
@@ -58,9 +68,7 @@ class TodoItemsController < ApplicationController
     @todo_list = TodoList.find(params[:todo_list_id]) #@ instance- we will have access in our view  
   end
 
-  private
   def todo_item_params
     params[:todo_item].permit(:content)
   end
-
 end

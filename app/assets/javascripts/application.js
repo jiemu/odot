@@ -14,3 +14,9 @@
 //= require jquery_ujs
 //= require turbolinks
 //= require_tree .
+//= require build/react.js
+//= require build/react-with-addons.js
+//= require build/react-dom.js
+//= require build/react-dom.min
+//= require build/browser.min.js
+//= require react_ujs

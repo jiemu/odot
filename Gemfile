@@ -9,6 +9,9 @@ gem 'jquery-rails'
 gem 'turbolinks'
 gem 'jbuilder', '~> 1.2'
 gem 'test-unit'
+gem 'react-rails', '~> 1.0'
+gem 'browserify-rails', '~>0.5'
+gem 'therubyracer', platforms: :ruby
 
 group :doc do
   # bundle exec rake doc:rails generates the API under doc/api.
